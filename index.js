@@ -9,7 +9,8 @@ const bot = new TelegramBot(TOKEN, {polling:true})
 // 	ssl: true,
 // });
 bot.on('message', msg => {
-	bot.sendMessage(msg.chat.id, "Enter Login:")
+	bot.sendMessage(msg.chat.id, `Hello from HEROKU,
+	bot says: " Hi ${msg.from.first_name}"`)
 })
 
 // client.connect();
