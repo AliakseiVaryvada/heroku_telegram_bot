@@ -2,12 +2,12 @@ const TelegramBot = require('node-telegram-bot-api')
 const TOKEN = '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A'
 const bot = new TelegramBot(TOKEN, {polling:true})
 
-const { Client } = require('pg');
+// const { Client } = require('pg');
 
-const client = new Client({
-	connectionString: process.env.DATABASE_URL,
-	ssl: true,
-});
+// const client = new Client({
+// 	connectionString: process.env.DATABASE_URL,
+// 	ssl: true,
+// });
 bot.on('message', msg => {
 	bot.sendMessage(msg.chat.id, "Enter Login:")
 })
