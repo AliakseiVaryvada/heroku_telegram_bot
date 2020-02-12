@@ -13,6 +13,7 @@
   "author": "Aliaksei Varyvada",
   "license": "ISC",
   "dependencies": {
-    "node-telegram-bot-api": "^0.40.0"
+    "node-telegram-bot-api": "^0.40.0",
+    "pg": "^7.18.1"
   }
 }
