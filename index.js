@@ -9,18 +9,14 @@ const client = new Client({
 	ssl: true
 });
 
-let logi = {
-	loginExpense: null,
-	passwordExpense: ''
-};
 //let loginInputQueue = 0; // очередность ввода, 0 -логин 1-пасс обнуление - логаут
 let loginExpense = '';
-
+let loginResult = false
 bot.on('message', msg => {
 	if (msg.text === '/start') {
-		bot.sendMessage(msg.chat.id, `Hi ${msg.from.first_name}, enter you Expense Login:`);
+		bot.sendMessage(msg.chat.id, `Hi, enter you Expense Login:`);
 	} else if (msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) {
-		console.log('here');
+		console.log('EMAIL');
 		loginExpense = msg.text
 		bot.sendMessage(msg.chat.id, `Enter you Expense Password:`)
 
@@ -29,17 +25,21 @@ bot.on('message', msg => {
 
 	} else if (loginExpense !='') {
 		console.log('PASSWORD');
-		creedsVerification('SELECT id, office__c FROM salesforce.contact WHERE password__c ='+msg.text);
-	}
-	console.log(loginExpense)
-	console.log('end')
 
+		creedsVerification(
+			'SELECT id, office__c, email, firstname ' +
+			'FROM salesforce.contact ' +
+			'WHERE password__c = \''+msg.text+'\'' +
+			' AND email = \''+ loginExpense +'\'', msg);
+
+		console.log(loginResult)
+	}
 });
 
-
-function creedsVerification(creedsQuerry) {
+function creedsVerification(creedsQuerry, msg) {
 	client.connect();
 	console.log(creedsQuerry);
+	let loginSuccess = false;
 	client.query(creedsQuerry, (err, res) => {
 		if (err) {
 			throw err;
@@ -48,5 +48,10 @@ function creedsVerification(creedsQuerry) {
 			console.log(JSON.stringify(row));
 		}
 		client.end();
+		res.rows.length == 1 ? bot.sendMessage(msg.chat.id, `Hello ${res.rows[0].firstname}! Login Success!! :)`)
+			: bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`)
+		loginResult = true
 	});
+
+
 }
