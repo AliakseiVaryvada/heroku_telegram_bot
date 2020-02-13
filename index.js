@@ -9,32 +9,213 @@ const client = new Client({
 	ssl: true
 });
 
-//let loginInputQueue = 0; // очередность ввода, 0 -логин 1-пасс обнуление - логаут
+const afterLoginSelector =
+	{
+		reply_markup: {
+			inline_keyboard: [
+				{text: 'Current Balance', callback_data: 'balance_btn'},
+				{text: 'New Expense Card', callback_data: 'card_btn'}
+			]
+		}
+	};
+
+let calendarDay = new Date();
+let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+let idCalendarMessage
+
+let calendarJSON
+//createCalendar(2019, 3);
+
+function createCalendar(year, month){
+	let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
+	let d = new Date(year, mon);
+	// пробелы для первого ряда
+	// с понедельника до первого дня месяца
+	// * * * 1  2  3  4
+	 calendarJSON =
+		{
+			'reply_markup': {
+				'inline_keyboard': [
+					[
+						{text: '<', callback_data: 'last_month_btn'},
+						{text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(), callback_data: 'select_btn'},
+						{text: '>', callback_data: 'next_month_btn'}
+					],
+
+					[
+						{text: 'S', callback_data: 'week_day'},
+						{text: 'M', callback_data: 'week_day'},
+						{text: 'T', callback_data: 'week_day'},
+						{text: 'W', callback_data: 'week_day'},
+						{text: 'T', callback_data: 'week_day'},
+						{text: 'F', callback_data: 'week_day'},
+						{text: 'S', callback_data: 'week_day'}
+					],
+					[],
+					[],
+					[],
+					[],
+					[],
+					[],
+					[]
+				]
+			}
+		};
+	console.log(calendarJSON);
+
+	for (let i = 0; i < getDay(d); i++) {
+		if(typeof (calendarJSON.reply_markup.inline_keyboard[3]) == 'undefined'){
+			calendarJSON.reply_markup.inline_keyboard.push([]);
+		}
+		let obj = {text: ' ', callback_data: 'empty_field'}
+		 calendarJSON.reply_markup.inline_keyboard[3].push(obj)
+			 //reply_markup.inline_keyboard[0].push(obj);
+	}
+
+	// <td> ячейки календаря с датами
+	let i = 3 //номер массива
+	while (d.getMonth() == mon) {
+		calendarJSON.reply_markup.inline_keyboard[i].push({text: d.getDate(), callback_data: 'date_field'});
+
+		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
+			i++
+		}
+
+		d.setDate(d.getDate() + 1);
+	}
+
+	// добить таблицу пустыми ячейками, если нужно
+	// 29 30 31 * * * *
+	if (getDay(d) != 0) {
+		for (let i = getDay(d); i < 7; i++) {
+			calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
+		}
+	}
+}
+
+function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
+	let day = date.getDay();
+	if (day == 0) day = 7; // сделать воскресенье (0) последним днем
+	return day - 1;
+}
+
+
+
+
 let loginExpense = '';
-let loginResult = false
+let loginResult = false;
 bot.on('message', msg => {
 	if (msg.text === '/start') {
 		bot.sendMessage(msg.chat.id, `Hi, enter you Expense Login:`);
 	} else if (msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) {
 		console.log('EMAIL');
-		loginExpense = msg.text
-		bot.sendMessage(msg.chat.id, `Enter you Expense Password:`)
+		loginExpense = msg.text;
+		bot.sendMessage(msg.chat.id, `Enter you Expense Password:`);
 
-	} else if (!(msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) && loginExpense === ''){
-			bot.sendMessage(msg.chat.id,`Wrong login. Login must have pattern "email@email.ru". Retry please.`)
+	} else if (!(msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) && loginExpense === '') {
+		bot.sendMessage(msg.chat.id, `Wrong login. Login must have pattern "email@email.ru". Retry please.`);
 
-	} else if (loginExpense !='') {
+	} else if (loginExpense != '') {
 		console.log('PASSWORD');
-
 		creedsVerification(
 			'SELECT id, office__c, email, firstname ' +
 			'FROM salesforce.contact ' +
-			'WHERE password__c = \''+msg.text+'\'' +
-			' AND email = \''+ loginExpense +'\'', msg);
+			'WHERE password__c = \'' + msg.text + '\'' +
+			' AND email = \'' + loginExpense + '\'', msg);
 
-		console.log(loginResult)
 	}
 });
+
+bot.on('callback_query', (callbackQuery) => {
+	const msg = callbackQuery.message;
+	console.log(callbackQuery.data);
+	switch (callbackQuery.data) {
+		case 'new_expense_btn':
+			bot.sendMessage(
+				msg.chat.id,
+				'Choose a day to create a card:',
+				{
+					'reply_markup': {
+						'inline_keyboard': [
+							[
+								{
+									text: 'Today',
+									callback_data: 'today_btn'
+								},
+								{
+									text: 'Calendar',
+									callback_data: 'calendar_btn'
+								},
+								{
+									text: 'Cancel',
+									callback_data: 'new_expense_btn'
+								}
+							]
+						]
+					}
+				}
+			);
+			break;
+
+		case 'today_btn':
+			let dateForNewExpense = new Date();
+			break
+
+
+		case 'last_month_btn':
+			bot.deleteMessage(
+					callbackQuery.message.chat.id,
+					callbackQuery.message.message_id,
+				).catch(function (err) {
+					if (err)
+						console.log("delMessage error");
+				});
+
+			calendarDay.setMonth(calendarDay.getMonth() - 1)
+			console.log(calendarDay)
+			console.log(calendarDay.getFullYear())
+			console.log(calendarDay.getMonth())
+			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			bot.sendMessage(
+				msg.chat.id,
+				'Choose a day with calendar:',
+				calendarJSON
+			);
+			break
+
+		case 'next_month_btn':
+			bot.deleteMessage(
+				callbackQuery.message.chat.id,
+				callbackQuery.message.message_id,
+			).catch(function (err) {
+				if (err)
+					console.log("delMessage error");
+			});
+
+			calendarDay.setMonth(calendarDay.getMonth() + 1)
+
+			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			bot.sendMessage(
+				msg.chat.id,
+				'Choose a day with calendar:',
+				calendarJSON
+			);
+			break
+
+
+		case 'calendar_btn':
+			console.log(calendarDay.getFullYear())
+			console.log(calendarDay.getMonth())
+			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth()+1);
+			bot.sendMessage(
+				msg.chat.id,
+				'Choose a day with calendar:',
+				calendarJSON
+			);
+	}
+});
+
+bot.on("polling_error", (err) => console.log(err));
 
 function creedsVerification(creedsQuerry, msg) {
 	client.connect();
@@ -48,9 +229,31 @@ function creedsVerification(creedsQuerry, msg) {
 			console.log(JSON.stringify(row));
 		}
 		client.end();
-		res.rows.length == 1 ? bot.sendMessage(msg.chat.id, `Hello ${res.rows[0].firstname}! Login Success!! :)`)
-			: bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`)
-		loginResult = true
+
+		res.rows.length == 1 ? bot.sendMessage(
+			msg.chat.id,
+			`Hello ${res.rows[0].firstname}! Login Success!! Select action: `,
+			{
+				'reply_markup': {
+					'inline_keyboard': [
+						[
+							{
+								text: 'Current Balance',
+								callback_data: 'balance_btn'
+							},
+							{
+								text: 'New Expense Card',
+								callback_data: 'new_expense_btn'
+							}
+						]
+					]
+				}
+			}
+			)
+
+			: bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`);
+		//TODO add json in const
+		loginResult = true;
 	});
 
 
