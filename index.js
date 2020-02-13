@@ -9,15 +9,13 @@ const client = new Client({
 	ssl: true
 });
 
-const afterLoginSelector =
-	{
-		reply_markup: {
-			inline_keyboard: [
-				{text: 'Current Balance', callback_data: 'balance_btn'},
-				{text: 'New Expense Card', callback_data: 'card_btn'}
-			]
-		}
-	};
+let newExpenseCardInfo = {
+	amount: 0,
+	date: new Date(),
+	office: '',
+	keeper: '',
+	description: ''
+}
 
 let calendarDay = new Date();
 let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -75,7 +73,7 @@ function createCalendar(year, month){
 	// <td> ячейки календаря с датами
 	let i = 3 //номер массива
 	while (d.getMonth() == mon) {
-		calendarJSON.reply_markup.inline_keyboard[i].push({text: d.getDate(), callback_data: 'date_field'});
+		calendarJSON.reply_markup.inline_keyboard[i].push({text: d.getDate(), callback_data: 'date_field:'+d.getDate()});
 
 		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
 			i++
@@ -98,9 +96,6 @@ function getDay(date) { // получить номер дня недели, от
 	if (day == 0) day = 7; // сделать воскресенье (0) последним днем
 	return day - 1;
 }
-
-
-
 
 let loginExpense = '';
 let loginResult = false;
@@ -129,6 +124,16 @@ bot.on('message', msg => {
 bot.on('callback_query', (callbackQuery) => {
 	const msg = callbackQuery.message;
 	console.log(callbackQuery.data);
+	let dateButtonValue;
+
+	if(callbackQuery.data.includes(':')){
+		console.log('split!!!')
+		let dateArray = callbackQuery.data.split(':');
+		callbackQuery.data = dateArray[0]
+		dateButtonValue = dateArray[1]
+		console.log(dateArray)
+	}
+
 	switch (callbackQuery.data) {
 		case 'new_expense_btn':
 			bot.sendMessage(
@@ -161,7 +166,6 @@ bot.on('callback_query', (callbackQuery) => {
 			let dateForNewExpense = new Date();
 			break
 
-
 		case 'last_month_btn':
 			bot.deleteMessage(
 					callbackQuery.message.chat.id,
@@ -172,9 +176,7 @@ bot.on('callback_query', (callbackQuery) => {
 				});
 
 			calendarDay.setMonth(calendarDay.getMonth() - 1)
-			console.log(calendarDay)
-			console.log(calendarDay.getFullYear())
-			console.log(calendarDay.getMonth())
+
 			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
 			bot.sendMessage(
 				msg.chat.id,
@@ -202,16 +204,23 @@ bot.on('callback_query', (callbackQuery) => {
 			);
 			break
 
-
 		case 'calendar_btn':
-			console.log(calendarDay.getFullYear())
-			console.log(calendarDay.getMonth())
 			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth()+1);
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
 				calendarJSON
 			);
+
+		case 'date_field':
+			newExpenseCardInfo.date = new Date(calendarDay.getFullYear(), calendarDay.getMonth(), dateButtonValue)
+			bot.sendMessage(
+				msg.chat.id,
+				'Enter Amount value please:',
+			);
+			console.log(newExpenseCardInfo)
+			console.log(msg)
+			break
 	}
 });
 
