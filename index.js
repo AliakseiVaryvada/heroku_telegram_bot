@@ -14,100 +14,111 @@ let newExpenseCardInfo = {
 };
 
 let calendarDay = new Date();
-let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 let idCalendarMessage;
-
+let balanceValue;
 let userObj;
 let calendarJSON;
 
 //createCalendar(2019, 3);
 
-function createCalendar(year, month) {
-	let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
-	let d = new Date(year, mon);
-	// пробелы для первого ряда
-	// с понедельника до первого дня месяца
-	// * * * 1  2  3  4
-	calendarJSON =
-		{
-			'reply_markup': {
-				'inline_keyboard': [
-					[
-						{text: '<', callback_data: 'last_month_btn'},
-						{
-							text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(),
-							callback_data: 'select_btn'
-						},
-						{text: '>', callback_data: 'next_month_btn'}
-					],
+// function createCalendar(year, month) {
+// 	let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
+// 	let d = new Date(year, mon);
+// 	// пробелы для первого ряда
+// 	// с понедельника до первого дня месяца
+// 	// * * * 1  2  3  4
+// 	calendarJSON =
+// 		{
+// 			'reply_markup': {
+// 				'inline_keyboard': [
+// 					[
+// 						{text: '<', callback_data: 'last_month_btn'},
+// 						{
+// 							text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(),
+// 							callback_data: 'select_btn'
+// 						},
+// 						{text: '>', callback_data: 'next_month_btn'}
+// 					],
+//
+// 					[
+// 						{text: 'S', callback_data: 'week_day'},
+// 						{text: 'M', callback_data: 'week_day'},
+// 						{text: 'T', callback_data: 'week_day'},
+// 						{text: 'W', callback_data: 'week_day'},
+// 						{text: 'T', callback_data: 'week_day'},
+// 						{text: 'F', callback_data: 'week_day'},
+// 						{text: 'S', callback_data: 'week_day'}
+// 					],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[]
+// 				]
+// 			}
+// 		};
+// 	console.log(calendarJSON);
+//
+// 	for (let i = 0; i < getDay(d); i++) {
+// 		if (typeof (calendarJSON.reply_markup.inline_keyboard[3]) == 'undefined') {
+// 			calendarJSON.reply_markup.inline_keyboard.push([]);
+// 		}
+// 		let obj = {text: ' ', callback_data: 'empty_field'};
+// 		calendarJSON.reply_markup.inline_keyboard[3].push(obj);
+// 		//reply_markup.inline_keyboard[0].push(obj);
+// 	}
+//
+// 	// <td> ячейки календаря с датами
+// 	let i = 3; //номер массива
+// 	while (d.getMonth() == mon) {
+// 		calendarJSON.reply_markup.inline_keyboard[i].push({
+// 			text: d.getDate(),
+// 			callback_data: 'date_field:' + d.getDate()
+// 		});
+//
+// 		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
+// 			i++;
+// 		}
+//
+// 		d.setDate(d.getDate() + 1);
+// 	}
+//
+// 	// добить таблицу пустыми ячейками, если нужно
+// 	// 29 30 31 * * * *
+// 	if (getDay(d) != 0) {
+// 		for (let i = getDay(d); i < 7; i++) {
+// 			calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
+// 		}
+// 	}
+// }
 
-					[
-						{text: 'S', callback_data: 'week_day'},
-						{text: 'M', callback_data: 'week_day'},
-						{text: 'T', callback_data: 'week_day'},
-						{text: 'W', callback_data: 'week_day'},
-						{text: 'T', callback_data: 'week_day'},
-						{text: 'F', callback_data: 'week_day'},
-						{text: 'S', callback_data: 'week_day'}
-					],
-					[],
-					[],
-					[],
-					[],
-					[],
-					[],
-					[]
-				]
-			}
-		};
-	console.log(calendarJSON);
-
-	for (let i = 0; i < getDay(d); i++) {
-		if (typeof (calendarJSON.reply_markup.inline_keyboard[3]) == 'undefined') {
-			calendarJSON.reply_markup.inline_keyboard.push([]);
-		}
-		let obj = {text: ' ', callback_data: 'empty_field'};
-		calendarJSON.reply_markup.inline_keyboard[3].push(obj);
-		//reply_markup.inline_keyboard[0].push(obj);
-	}
-
-	// <td> ячейки календаря с датами
-	let i = 3; //номер массива
-	while (d.getMonth() == mon) {
-		calendarJSON.reply_markup.inline_keyboard[i].push({
-			text: d.getDate(),
-			callback_data: 'date_field:' + d.getDate()
-		});
-
-		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
-			i++;
-		}
-
-		d.setDate(d.getDate() + 1);
-	}
-
-	// добить таблицу пустыми ячейками, если нужно
-	// 29 30 31 * * * *
-	if (getDay(d) != 0) {
-		for (let i = getDay(d); i < 7; i++) {
-			calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
-		}
-	}
-}
-
-function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
-	let day = date.getDay();
-	if (day == 0) {
-		day = 7;
-	} // сделать воскресенье (0) последним днем
-	return day - 1;
-}
+// function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
+// 	let day = date.getDay();
+// 	if (day == 0) {
+// 		day = 7;
+// 	} // сделать воскресенье (0) последним днем
+// 	return day - 1;
+// }
 
 let loginExpense = '';
 let loginResult = false;
 bot.on('message', msg => {
 	if (msg.text === '/start') {
 		bot.sendMessage(msg.chat.id, `Hi, enter you Expense Login:`);
+		//clean old login ifo
+		userObj = {};
+		loginExpense = '';
+
+		newExpenseCardInfo = {
+			amount: 0,
+			date: new Date(),
+			keeper: '',
+			description: ''
+		};
+
 	} else if (msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) {
 		console.log('EMAIL');
 		loginExpense = msg.text;
@@ -164,6 +175,13 @@ bot.on('message', msg => {
 			}
 			console.log('SUCCESS');
 			client.end();
+			// clean object
+			newExpenseCardInfo = {
+				amount: 0,
+				date: new Date(),
+				keeper: '',
+				description: ''
+			};
 
 		});
 	}
@@ -234,7 +252,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 			calendarDay.setMonth(calendarDay.getMonth() - 1);
 
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			calendar.createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
@@ -254,7 +272,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 			calendarDay.setMonth(calendarDay.getMonth() + 1);
 
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			calendar.createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
@@ -263,7 +281,7 @@ bot.on('callback_query', (callbackQuery) => {
 			break;
 
 		case 'calendar_btn':
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth() + 1);
+			calendar.createCalendar(calendarDay.getFullYear(), calendarDay.getMonth() + 1);
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
@@ -284,7 +302,6 @@ bot.on('callback_query', (callbackQuery) => {
 
 
 			let balanceYear = new Date().getFullYear();
-			let balanceValue = 0
 			let clientBalance = new Client({
 				connectionString: process.env.DATABASE_URL,
 				ssl: true
@@ -341,7 +358,8 @@ function creedsVerification(creedsQuerry, msg) {
 	console.log(creedsQuerry);
 	client.query(creedsQuerry, (err, res) => {
 		if (err) {
-			throw err;
+			bot.sendMessage(msg.chat.id, `Ooops!!  Wrong password or email.
+			 Please check entered information, CapsLock button and retry.`);
 		}
 		for (let row of res.rows) {
 			console.log(JSON.stringify(row));
@@ -351,7 +369,7 @@ function creedsVerification(creedsQuerry, msg) {
 		if (res.rows.length == 1) {
 			bot.sendMessage(
 				msg.chat.id,
-				`Hello ${res.rows[0].firstname}! Login Success!! Select action: `,
+				`Hello ${res.rows[0].firstname}! Login Success!! For logout enter /start . Select action: `,
 				{
 					'reply_markup': {
 						'inline_keyboard': [
@@ -375,7 +393,7 @@ function creedsVerification(creedsQuerry, msg) {
 		} else {
 			bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`);
 		}
-		//TODO add json in const and wrong password msg, years(-3 +1); Balance for today year
+		//TODO add json in const; Balance for today year
 		loginResult = true;
 	});
 
