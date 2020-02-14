@@ -4,15 +4,11 @@ const TOKEN = '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A';
 const bot = new TelegramBot(TOKEN, {polling: true});
 
 const {Client} = require('pg');
-const client = new Client({
-	connectionString: process.env.DATABASE_URL,
-	ssl: true
-});
+
 
 let newExpenseCardInfo = {
 	amount: 0,
 	date: new Date(),
-	office: '',
 	keeper: '',
 	description: ''
 }
@@ -21,6 +17,7 @@ let calendarDay = new Date();
 let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 let idCalendarMessage
 
+let userObj
 let calendarJSON
 //createCalendar(2019, 3);
 
@@ -110,14 +107,49 @@ bot.on('message', msg => {
 	} else if (!(msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) && loginExpense === '') {
 		bot.sendMessage(msg.chat.id, `Wrong login. Login must have pattern "email@email.ru". Retry please.`);
 
-	} else if (loginExpense != '') {
+	} else if (loginExpense != '' && typeof (userObj) == 'undefined') {
 		console.log('PASSWORD');
 		creedsVerification(
-			'SELECT id, office__c, email, firstname ' +
+			'SELECT sfid, office__c, email, firstname ' +
 			'FROM salesforce.contact ' +
 			'WHERE password__c = \'' + msg.text + '\'' +
 			' AND email = \'' + loginExpense + '\'', msg);
 
+	} else if (msg.text.match(/[0-9]+\.[0-9]+/) && newExpenseCardInfo.amount == 0) {
+		newExpenseCardInfo.amount = msg.text;
+		bot.sendMessage(
+			msg.chat.id,
+			'Enter Description please:',
+		);
+	} else if (newExpenseCardInfo.amount != 0 && newExpenseCardInfo.description == '') {
+
+		newExpenseCardInfo.description = msg.text;
+		bot.sendMessage(
+			msg.chat.id,
+			'New Expense created!!',
+		);
+
+		let insertQuery =
+			'INSERT INTO salesforce.expense_card__c (carddate__c, amount__c, cardkeeper__c, description__c) ' +
+			'( '+ parseFloat(newExpenseCardInfo.amount) + ', ' + newExpenseCardInfo.date + ', ' +
+			newExpenseCardInfo.keeper + ', ' + newExpenseCardInfo.description + ' )'
+
+		let client = new Client({
+			connectionString: process.env.DATABASE_URL,
+			ssl: true
+		});
+		client.connect();
+		console.log(insertQuery);
+		client.query(insertQuery, (err, res) => {
+			if (err) {
+				throw err;
+			}
+			for (let row of res.rows) {
+				console.log(JSON.stringify(row));
+			}
+			client.end();
+
+		});
 	}
 });
 
@@ -213,13 +245,12 @@ bot.on('callback_query', (callbackQuery) => {
 			);
 
 		case 'date_field':
-			newExpenseCardInfo.date = new Date(calendarDay.getFullYear(), calendarDay.getMonth(), dateButtonValue)
+			newExpenseCardInfo.date = new Date(calendarDay.getFullYear(), calendarDay.getMonth(), parseInt(dateButtonValue)+1)
 			bot.sendMessage(
 				msg.chat.id,
-				'Enter Amount value please:',
+				'Enter Amount value please (in currency format, example: 12.34):',
 			);
-			console.log(newExpenseCardInfo)
-			console.log(msg)
+
 			break
 	}
 });
@@ -227,6 +258,10 @@ bot.on('callback_query', (callbackQuery) => {
 bot.on("polling_error", (err) => console.log(err));
 
 function creedsVerification(creedsQuerry, msg) {
+	let client = new Client({
+		connectionString: process.env.DATABASE_URL,
+		ssl: true
+	});
 	client.connect();
 	console.log(creedsQuerry);
 	let loginSuccess = false;
@@ -239,31 +274,38 @@ function creedsVerification(creedsQuerry, msg) {
 		}
 		client.end();
 
-		res.rows.length == 1 ? bot.sendMessage(
-			msg.chat.id,
-			`Hello ${res.rows[0].firstname}! Login Success!! Select action: `,
-			{
-				'reply_markup': {
-					'inline_keyboard': [
-						[
-							{
-								text: 'Current Balance',
-								callback_data: 'balance_btn'
-							},
-							{
-								text: 'New Expense Card',
-								callback_data: 'new_expense_btn'
-							}
+		if (res.rows.length == 1) {
+			bot.sendMessage(
+				msg.chat.id,
+				`Hello ${res.rows[0].firstname}! Login Success!! Select action: `,
+				{
+					'reply_markup': {
+						'inline_keyboard': [
+							[
+								{
+									text: 'Current Balance',
+									callback_data: 'balance_btn'
+								},
+								{
+									text: 'New Expense Card',
+									callback_data: 'new_expense_btn'
+								}
+							]
 						]
-					]
+					}
 				}
-			}
-			)
-
-			: bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`);
-		//TODO add json in const
+			);
+			userObj = res.rows[0]
+			console.log(res.rows[0])
+			newExpenseCardInfo.keeper = userObj.sfid
+			console.log(newExpenseCardInfo.keeper)
+		} else {
+			bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`);
+		}
+		//TODO add json in const and wrong password msg
 		loginResult = true;
 	});
 
 
 }
+
