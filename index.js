@@ -116,6 +116,7 @@ bot.on('message', msg => {
 			' AND email = \'' + loginExpense + '\'', msg);
 
 	} else if (msg.text.match(/[0-9]+\.[0-9]+/) && newExpenseCardInfo.amount == 0) {
+		///[0-9]+\.[0-9]+/)
 		newExpenseCardInfo.amount = msg.text;
 		bot.sendMessage(
 			msg.chat.id,
@@ -130,9 +131,17 @@ bot.on('message', msg => {
 		);
 
 		let insertQuery =
-			'INSERT INTO salesforce.expense_card__c (carddate__c, amount__c, cardkeeper__c, description__c) ' +
-			'( '+ parseFloat(newExpenseCardInfo.amount) + ', ' + newExpenseCardInfo.date + ', ' +
-			newExpenseCardInfo.keeper + ', ' + newExpenseCardInfo.description + ' )'
+			`INSERT INTO salesforce.Expense_Card__c ( Amount__c, CardDate__c, CardKeeper__c, Description__c, External_Expense__c)
+				 VALUES 
+				 ( 
+				 ${parseInt(newExpenseCardInfo.amount)}, 
+				 
+				 '${newExpenseCardInfo.date.getDay()}-${newExpenseCardInfo.date.getMonth()}-${newExpenseCardInfo.date.getFullYear()}', 
+				 
+				 '${newExpenseCardInfo.keeper}', 
+				 '${newExpenseCardInfo.description}', 
+				 '${idGenerator()}'
+				 )`
 
 		let client = new Client({
 			connectionString: process.env.DATABASE_URL,
@@ -140,13 +149,11 @@ bot.on('message', msg => {
 		});
 		client.connect();
 		console.log(insertQuery);
-		client.query(insertQuery, (err, res) => {
+		client.query(insertQuery, (err) => {
 			if (err) {
 				throw err;
 			}
-			for (let row of res.rows) {
-				console.log(JSON.stringify(row));
-			}
+			console.log('SUCCESS')
 			client.end();
 
 		});
@@ -256,6 +263,11 @@ bot.on('callback_query', (callbackQuery) => {
 });
 
 bot.on("polling_error", (err) => console.log(err));
+
+function idGenerator() {
+	let number = Math.random().toString(36);
+	return number.toString(36).substr(2, 10);
+}
 
 function creedsVerification(creedsQuerry, msg) {
 	let client = new Client({
