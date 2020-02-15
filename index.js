@@ -17,7 +17,9 @@ let calendarDay = new Date();
 let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 let idCalendarMessage;
 let balanceValue;
+let officeNumber;
 let userObj;
+let isAdmin;
 let calendarJSON;
 
 //createCalendar(2019, 3);
@@ -127,7 +129,7 @@ bot.on('message', msg => {
 	} else if (!(msg.text.length >= 6 && msg.text.includes('@') && msg.text.includes('.')) && loginExpense === '') {
 		bot.sendMessage(msg.chat.id, `Wrong login. Login must have pattern "email@email.ru". Retry please.`);
 
-	} else if (loginExpense != '' && typeof(userObj.sfid) == 'undefined' ) {
+	} else if (loginExpense != '' && typeof (userObj.sfid) == 'undefined') {
 		console.log('PASSWORD');
 		creedsVerification(
 			'SELECT sfid, office__c, email, firstname, admin__c ' +
@@ -135,14 +137,14 @@ bot.on('message', msg => {
 			'WHERE password__c = \'' + msg.text + '\'' +
 			' AND email = \'' + loginExpense + '\'', msg);
 
-	} else if (msg.text.match(/[0-9]+\.[0-9]+/) && newExpenseCardInfo.amount == 0) {
+	} else if (msg.text.match(/\-[0-9]|[0-9]+\.[0-9]+/)) {// && newExpenseCardInfo.amount == 0) {
 		///[0-9]+\.[0-9]+/)
 		newExpenseCardInfo.amount = msg.text;
 		bot.sendMessage(
 			msg.chat.id,
 			'Enter Description please:'
 		);
-	} else if (newExpenseCardInfo.amount != 0 && newExpenseCardInfo.description == '') {
+	} else if (newExpenseCardInfo.amount != 0 ) {//&& newExpenseCardInfo.description == ''
 
 		newExpenseCardInfo.description = msg.text;
 		bot.sendMessage(
@@ -158,7 +160,7 @@ bot.on('message', msg => {
 							}
 						]
 					]
-				},
+				}
 			}
 		);
 
@@ -175,6 +177,7 @@ bot.on('message', msg => {
 				 '${idGenerator()}'
 				 )`;
 
+		console.log(insertQuery)
 		let client = new Client({
 			connectionString: process.env.DATABASE_URL,
 			ssl: true
@@ -188,15 +191,14 @@ bot.on('message', msg => {
 			console.log('SUCCESS INSERT');
 			client.end();
 
-			balanceValue = balanceValue + parseFloat(newExpenseCardInfo.amount)
+			balanceValue = balanceValue + parseFloat(newExpenseCardInfo.amount);
 
 			// clean object
-			newExpenseCardInfo = {
-				amount: 0,
-				date: new Date(),
-				keeper: '',
-				description: ''
-			};
+			// newExpenseCardInfo = {
+			// 	amount: 0,
+			// 	date: new Date(),
+			// 	description: ''
+			// };
 
 		});
 	}
@@ -206,13 +208,20 @@ bot.on('callback_query', (callbackQuery) => {
 	const msg = callbackQuery.message;
 	console.log(callbackQuery.data);
 	let dateButtonValue;
-
 	if (callbackQuery.data.includes(':')) {
 
 		let dateArray = callbackQuery.data.split(':');
 		callbackQuery.data = dateArray[0];
 		dateButtonValue = dateArray[1];
 
+	}
+
+	if (callbackQuery.data.includes('Office ')) {
+
+		let officeArray = callbackQuery.data.split(' ');
+		officeNumber = callbackQuery.data;
+		callbackQuery.data = 'office_selector';
+		console.log(officeNumber);
 	}
 
 	switch (callbackQuery.data) {
@@ -234,7 +243,7 @@ bot.on('callback_query', (callbackQuery) => {
 								},
 								{
 									text: 'Cancel',
-									callback_data: 'new_expense_btn'
+									callback_data: 'cancel_btn'
 								}
 							]
 						]
@@ -323,17 +332,43 @@ bot.on('callback_query', (callbackQuery) => {
 				ssl: true
 			});
 
-			let balanceQuery = 'SELECT SUM(balance__c) FROM salesforce.Monthly_Expense__c WHERE ' +
-				'Keeper__c = \'' + userObj.sfid + '\' AND date_part(\'year\', monthdate__c) = \'' + balanceYear + '\''
+			let balanceQuery
+
+			if (isAdmin == false) {
+
+				 balanceQuery = `SELECT (SUM(Balance__c) -
+				(SELECT SUM(Amount__c) FROM salesforce.expense_card__c WHERE CardKeeper__c = '${userObj.sfid}' AND
+				date_part('year', carddate__c) = '${balanceYear}')) as balance
+				FROM salesforce.Monthly_Expense__c WHERE Keeper__c = '${userObj.sfid}'
+				AND date_part('year', monthdate__c) = '${balanceYear}'`;
+
+			} else {
+
+				balanceQuery =
+					`SELECT  SUM(Balance__c) as balance
+					FROM salesforce.Monthly_Expense__c WHERE
+        			(SELECT office__c FROM salesforce.contact WHERE sfid = keeper__c) = '${officeNumber}'
+					AND date_part('year', monthdate__c) = '${balanceYear}' 
+       				UNION
+        			SELECT SUM(amount__c) as amount
+					FROM salesforce.expense_card__c
+					WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${officeNumber}' 
+					AND date_part('year', carddate__c) = '${balanceYear}'`;
+
+				console.log(balanceQuery)
+			}
 
 			clientBalance.connect();
-			clientBalance.query(balanceQuery,(err, res) => {
+			clientBalance.query(balanceQuery, (err, res) => {
 
-				console.log(balanceValue)
-				console.log(JSON.stringify(res.rows[0].sum))
-				let balanceValueFromQuery = JSON.stringify(res.rows[0].sum);
-				if (balanceValue != balanceValueFromQuery && typeof (balanceValue) == 'undefined'){
-					balanceValue = parseFloat(balanceValueFromQuery);
+				console.log(balanceValue);
+				console.log(JSON.stringify(res.rows));
+
+				if(isAdmin == false){
+				balanceValue = parseFloat(JSON.stringify(res.rows[0].balance));
+				} else {
+					balanceValue = parseFloat(JSON.stringify(res.rows[0].balance)) -
+						parseFloat(JSON.stringify(res.rows[1].balance));
 				}
 
 
@@ -343,7 +378,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 				clientBalance.end();
 
-				bot.sendMessage(msg.chat.id, `Balance summary in this year = ${balanceValue}$`,
+				bot.sendMessage(msg.chat.id, `Balance summary in this year = ${balanceValue.toFixed(2)}$`,
 					{
 						'reply_markup': {
 							'inline_keyboard': [
@@ -354,14 +389,41 @@ bot.on('callback_query', (callbackQuery) => {
 									}
 								]
 							]
-						},
-					});
+						}
+					}
+				);
 			});
 
 
-
-
 			break;
+
+		case 'cancel_btn':
+			bot.sendMessage(
+				msg.chat.id,
+				`For logout enter /start . Select action: `,
+				{
+					'reply_markup': {
+						'inline_keyboard': [
+							[
+								{
+									text: 'Current Balance',
+									callback_data: 'balance_btn'
+								},
+								{
+									text: 'New Expense Card',
+									callback_data: 'new_expense_btn'
+								}
+							]
+						]
+					}
+				}
+			);
+			break;
+
+		case 'office_selector':
+			adminSelectOffice(officeNumber, msg);
+			break;
+
 	}
 });
 
@@ -392,6 +454,7 @@ function creedsVerification(creedsQuerry, msg) {
 
 
 		if (res.rows.length == 1) {
+			isAdmin = false;
 			userObj = res.rows[0];
 			newExpenseCardInfo.keeper = userObj.sfid;
 			if (userObj.admin__c == false) {
@@ -416,26 +479,8 @@ function creedsVerification(creedsQuerry, msg) {
 					}
 				);
 			} else {
-				bot.sendMessage(
-					msg.chat.id,
-					`Hello Dear Admin! Login Success!! For logout or change office enter /start .\n Select office: `,
-					{
-						'reply_markup': {
-							'inline_keyboard': [
-								[
-									{
-										text: 'Current Balance',
-										callback_data: 'balance_btn'
-									},
-									{
-										text: 'New Expense Card',
-										callback_data: 'new_expense_btn'
-									}
-								]
-							]
-						}
-					}
-				);
+				adminLoginCase(msg);
+
 			}
 			console.log(newExpenseCardInfo.keeper);
 		} else {
@@ -445,6 +490,89 @@ function creedsVerification(creedsQuerry, msg) {
 		loginResult = true;
 	});
 
-
 }
+
+function adminSelectOffice(officeNumber, msg) {
+
+	let client = new Client({
+		connectionString: process.env.DATABASE_URL,
+		ssl: true
+	});
+
+	let adminQuery = `SELECT sfid, email, firstname FROM salesforce.contact WHERE 
+		 admin__c = true AND office__c = '${officeNumber}'`;
+	console.log(adminQuery);
+	client.connect();
+
+	client.query(adminQuery, (err, res) => {
+		if (err) {
+			bot.sendMessage(msg.chat.id, `Ooops!! Load office is error :( Please retry or login with PC.`);
+		}
+		client.end();
+
+		bot.sendMessage(
+			msg.chat.id,
+			`Select office Success!! For logout enter /start . Select action: `,
+			{
+				'reply_markup': {
+					'inline_keyboard': [
+						[
+							{
+								text: 'Current Balance',
+								callback_data: 'balance_btn'
+							},
+							{
+								text: 'New Expense Card',
+								callback_data: 'new_expense_btn'
+							}
+						]
+					]
+				}
+			}
+		);
+		isAdmin = true;
+		userObj = res.rows[0];
+		newExpenseCardInfo.keeper = userObj.sfid;
+	});
+}
+
+function adminLoginCase(msg) {
+	let option =
+		{
+			'reply_markup': {
+				'inline_keyboard': [
+					[]
+				]
+			}
+		};
+
+	let client = new Client({
+		connectionString: process.env.DATABASE_URL,
+		ssl: true
+	});
+	client.connect();
+
+	client.query(
+			`SELECT DISTINCT(office__c) FROM salesforce.contact WHERE office__c !='NULL' ORDER BY office__c DESC`,
+		(err, res) => {
+			if (err) {
+				bot.sendMessage(msg.chat.id, `Ooops!! Load office list error :( Please retry.`);
+			}
+			client.end();
+
+
+			for (let row of res.rows) {
+				option.reply_markup.inline_keyboard[0].push({text: row.office__c, callback_data: row.office__c});
+			}
+			bot.sendMessage(
+				msg.chat.id,
+				`Hello Dear Admin! Login Success!! For logout or change office enter /start .\nSelect office: `,
+				option
+			);
+
+		}
+	);
+}
+
+
 
