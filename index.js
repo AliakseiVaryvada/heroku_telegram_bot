@@ -1,4 +1,4 @@
-//const process 			= require('dotenv').config();
+const process 			= require('dotenv').config();
 const TelegramBot		= require('node-telegram-bot-api');
 const calendar 			= require('./calendar');
 const adminFunction 	= require('./AdminFunction');
