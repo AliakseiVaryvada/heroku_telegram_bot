@@ -268,6 +268,7 @@ bot.on('callback_query', (callbackQuery) => {
 					FROM salesforce.expense_card__c
 					WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${officeNumber}'
 					AND date_part('year', carddate__c) = '${balanceYear}'`;
+				console.log(balanceQuery)
 			}
 
 			clientBalance.connect();
