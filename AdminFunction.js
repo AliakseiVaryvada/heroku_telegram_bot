@@ -17,13 +17,13 @@ let adminSelectOffice = function adminSelectOffice(officeNumber, msg) {
 
 	client.query(adminQuery, (err, res) => {
 		if (err) {
-			indexVariable.bot.sendMessage(msg.chat.id, `Ooops!! Load office is error :( Please retry or login with PC.`);
+			indexVariable.bot.sendMessage(msg.chat.id, `❌ Ooops!! Load office is error :( Please retry or login with PC.`);
 		}
 		client.end();
 
 		indexVariable.bot.sendMessage(
 			msg.chat.id,
-			`Select office Success!! For logout enter /start . Select action: `,
+			`✅ Select office Success!! <em>For logout enter /start </em>. Select action: `,
 			queryAndJson.formAfterLogin
 		);
 		indexVariable.isAdmin = true;
@@ -62,7 +62,7 @@ let adminLoginCase = function adminLoginCase(msg) {
 			}
 			indexVariable.bot.sendMessage(
 				msg.chat.id,
-				`Hello Dear Admin! Login Success!! For logout or change office enter /start .\nSelect office: `,
+				`<strong>Hello Dear Admin </strong>🙏 ! Login Success!! <em>For logout or change office enter /start </em>.\nSelect office: `,
 				option
 			);
 

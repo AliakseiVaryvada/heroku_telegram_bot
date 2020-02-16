@@ -12,12 +12,12 @@ let createCalendar = function createCalendar(year, month) {
             'reply_markup': {
                 'inline_keyboard': [
                     [
-                        {text: '<', callback_data: 'last_month_btn'},
+                        {text: '🔙', callback_data: 'last_month_btn'},
                         {
                             text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(),
                             callback_data: 'select_btn'
                         },
-                        {text: '>', callback_data: 'next_month_btn'}
+                        {text: '🔜', callback_data: 'next_month_btn'}
                     ],
 
                     [

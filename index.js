@@ -25,7 +25,7 @@ let loginResult 	= false;
 bot.on('message', msg => {
 
 	if (msg.text === '/start') {
-		bot.sendMessage(msg.chat.id, `Hi, enter you Expense Login:`);
+		bot.sendMessage(msg.chat.id, `✋ Hi, enter you Expense Login:`);
 		//clean old login ifo
 		userObj 	 = {};
 		loginExpense = '';
@@ -43,7 +43,7 @@ bot.on('message', msg => {
 
 		bot.sendMessage(
 			msg.chat.id,
-			`Enter you Expense Password:`
+			`✒ Enter you Expense Password:`
 		);
 
 	//check email wrong case
@@ -51,7 +51,9 @@ bot.on('message', msg => {
 
 		bot.sendMessage(
 			msg.chat.id,
-			`Wrong login. Login must have pattern "email@email.ru". Retry please.`
+			`❌ Wrong login. <em>Login must have pattern "email@email.ru".</em>\n<strong>Retry please.</strong>`,
+			{parse_mode: 'html'}
+
 		);
 
 	//get password
@@ -69,7 +71,9 @@ bot.on('message', msg => {
 		newExpenseCardInfo.amount = msg.text;
 		bot.sendMessage(
 			msg.chat.id,
-			'Enter Description please:'
+			'✒ Enter <strong>Description</strong> please:',
+			{parse_mode: 'html'}
+
 		);
 
 	//insert case
@@ -78,7 +82,7 @@ bot.on('message', msg => {
 		newExpenseCardInfo.description = msg.text;
 		bot.sendMessage(
 			msg.chat.id,
-			'New Expense created!!',
+			'✅ <strong>New Expense created!!</strong>',
 			constQueryJSON.formBalanceBtn
 		);
 
@@ -112,7 +116,8 @@ bot.on('message', msg => {
 	} else {
 		bot.sendMessage(
 			msg.chat.id,
-			`Retry please.`,
+			`☝ <strong>Retry please.</strong>`,
+			{parse_mode: 'html'}
 		);
 	}
 });
@@ -148,7 +153,7 @@ bot.on('callback_query', (callbackQuery) => {
 		case 'new_expense_btn':
 			bot.sendMessage(
 				msg.chat.id,
-				'Choose a day to create a card:',
+				'✅ Choose a day to create a card:',
 				constQueryJSON.formExpense
 			);
 			break;
@@ -161,7 +166,8 @@ bot.on('callback_query', (callbackQuery) => {
 			);
 			bot.sendMessage(
 				msg.chat.id,
-				'Enter Amount value please (in currency format, example: 12.34):'
+				'Enter <strong>Amount</strong> value please <em>(in currency format, example: 12.34)</em>:',
+				{parse_mode: 'html'}
 			);
 			break;
 
@@ -180,7 +186,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 			bot.sendMessage(
 				msg.chat.id,
-				'Choose a day with calendar:',
+				'📆 Choose a day with calendar:',
 				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 			break;
@@ -199,7 +205,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 			bot.sendMessage(
 				msg.chat.id,
-				'Choose a day with calendar:',
+				'📆 Choose a day with calendar:',
 				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 			break;
@@ -208,7 +214,7 @@ bot.on('callback_query', (callbackQuery) => {
 
 			bot.sendMessage(
 				msg.chat.id,
-				'Choose a day with calendar:',
+				'📆 Choose a day with calendar:',
 				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 
@@ -218,7 +224,8 @@ bot.on('callback_query', (callbackQuery) => {
 				new Date(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth(), parseInt(dateButtonValue) + 1);
 			bot.sendMessage(
 				msg.chat.id,
-				'Enter Amount value please (in currency format, example: 12.34):'
+				'Enter <strong>Amount</strong> value please <em>(in currency format, example: 12.34)</em>:',
+				{parse_mode: 'html'}
 			);
 
 			break;
@@ -273,7 +280,7 @@ bot.on('callback_query', (callbackQuery) => {
 				clientBalance.end();
 
 				bot.sendMessage(msg.chat.id,
-					`Balance summary in this year = ${balanceValue.toFixed(2)}$`,
+					`💰 <strong>Balance</strong> summary in this year = <ins>${balanceValue.toFixed(2)}$</ins>`,
 					constQueryJSON.formNewExpenseCard
 				);
 			});
@@ -284,7 +291,7 @@ bot.on('callback_query', (callbackQuery) => {
 		case 'cancel_btn':
 			bot.sendMessage(
 				msg.chat.id,
-				`For logout enter /start . Select action: `,
+				`✅ <b>For logout enter</b> /start . <em>Select action:</em> `,
 				constQueryJSON.formAfterLogin
 			);
 			break;
@@ -296,8 +303,10 @@ bot.on('callback_query', (callbackQuery) => {
 		default :
 			bot.sendMessage(
 				msg.chat.id,
-				`Retry please.`,
-			);
+				`☝ <strong>Retry please.</strong>`,
+				{parse_mode: 'html'}
+
+		);
 	}
 });
 
@@ -323,8 +332,10 @@ function creedsVerification(creedsQuerry, msg) {
 
 	client.query(creedsQuerry, (err, res) => {
 		if (err) {
-			bot.sendMessage(msg.chat.id, `Ooops!!  Wrong password or email.
-			 Please check entered information, CapsLock button and retry.`);
+			bot.sendMessage(msg.chat.id, `\xE2\x9B\x94 <strong>Ooops!!</strong>  Wrong password or email.
+			 <em>Please check entered information, CapsLock button and retry.</em>`,
+			{parse_mode: 'html'}
+			)
 		}
 		for (let row of res.rows) {
 			console.log(JSON.stringify(row));
@@ -339,7 +350,7 @@ function creedsVerification(creedsQuerry, msg) {
 			if (userObj.admin__c == false) {
 				bot.sendMessage(
 					msg.chat.id,
-					`Hello ${res.rows[0].firstname}! Login Success!! For logout enter /start . Select action: `,
+					`✅ Hello ${res.rows[0].firstname}! <strong>Login Success!!</strong> For logout enter /start . Select action: `,
 					constQueryJSON.formAfterLogin
 
 				);
@@ -348,7 +359,10 @@ function creedsVerification(creedsQuerry, msg) {
 			}
 			console.log(newExpenseCardInfo.keeper);
 		} else {
-			bot.sendMessage(msg.chat.id, `Wrong login or password :( Retry Please`);
+			bot.sendMessage(msg.chat.id, `⛔ <strong>Ooops!!</strong>  Wrong password or email.
+			 <em>Please check entered information, CapsLock button and retry.</em>`,
+				{parse_mode: 'html'}
+			)
 		}
 		loginResult = true;
 	});

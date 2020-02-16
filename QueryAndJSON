@@ -1,19 +1,20 @@
 
 let formExpense =
 	{
+		'parse_mode': 'html',
 		'reply_markup': {
 			'inline_keyboard': [
 				[
 					{
-						text: 'Today',
+						text: '📆 Today',
 						callback_data: 'today_btn'
 					},
 					{
-						text: 'Calendar',
+						text: '📅 Calendar',
 						callback_data: 'calendar_btn'
 					},
 					{
-						text: 'Cancel',
+						text: '❌ Cancel',
 						callback_data: 'cancel_btn'
 					}
 				]
@@ -23,11 +24,12 @@ let formExpense =
 
 let formNewExpenseCard =
 	{
+		'parse_mode': 'html',
 		'reply_markup': {
 			'inline_keyboard': [
 				[
 					{
-						text: 'New Expense Card',
+						text: '➕ New Expense Card',
 						callback_data: 'new_expense_btn'
 					}
 				]
@@ -37,15 +39,16 @@ let formNewExpenseCard =
 
 let formAfterLogin =
 	{
+		'parse_mode': 'html',
 		'reply_markup': {
 			'inline_keyboard': [
 				[
 					{
-						text: 'Current Balance',
+						text: '💰 Current Balance',
 						callback_data: 'balance_btn'
 					},
 					{
-						text: 'New Expense Card',
+						text: '➕ New Expense Card',
 						callback_data: 'new_expense_btn'
 					}
 				]
@@ -54,11 +57,12 @@ let formAfterLogin =
 	}
 let formBalanceBtn =
 	{
+		'parse_mode': 'html',
 	'reply_markup': {
 		'inline_keyboard': [
 			[
 				{
-					text: 'Balance',
+					text: '💰 Balance',
 					callback_data: 'balance_btn'
 				}
 			]
