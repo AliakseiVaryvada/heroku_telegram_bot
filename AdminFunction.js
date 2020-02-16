@@ -35,6 +35,7 @@ let adminSelectOffice = function adminSelectOffice(officeNumber, msg) {
 let adminLoginCase = function adminLoginCase(msg) {
 	let option =
 		{
+			'parse_mode': 'html',
 			'reply_markup': {
 				'inline_keyboard': [
 					[]
