@@ -1,6 +1,8 @@
 let indexVariable = require('./index')
+let queryAndJson = require('./QueryAndJSON')
 const {Client} = require('pg');
 require('dotenv').config();
+
 
 let adminSelectOffice = function adminSelectOffice(officeNumber, msg) {
 
@@ -11,7 +13,6 @@ let adminSelectOffice = function adminSelectOffice(officeNumber, msg) {
 
 	let adminQuery = `SELECT sfid, email, firstname FROM salesforce.contact WHERE 
 		 admin__c = true AND office__c = '${officeNumber}'`;
-	console.log(adminQuery);
 	client.connect();
 
 	client.query(adminQuery, (err, res) => {
@@ -23,22 +24,7 @@ let adminSelectOffice = function adminSelectOffice(officeNumber, msg) {
 		indexVariable.bot.sendMessage(
 			msg.chat.id,
 			`Select office Success!! For logout enter /start . Select action: `,
-			{
-				'reply_markup': {
-					'inline_keyboard': [
-						[
-							{
-								text: 'Current Balance',
-								callback_data: 'balance_btn'
-							},
-							{
-								text: 'New Expense Card',
-								callback_data: 'new_expense_btn'
-							}
-						]
-					]
-				}
-			}
+			queryAndJson.formAfterLogin
 		);
 		indexVariable.isAdmin = true;
 		indexVariable.userObj = res.rows[0];
