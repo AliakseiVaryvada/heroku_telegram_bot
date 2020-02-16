@@ -7,6 +7,11 @@ const constQueryJSON 	= require('./QueryAndJSON')
 const bot				= new TelegramBot(TOKEN, {polling: true});
 const {Client} 			= require('pg');
 
+const PORT = process.env.PORT || 3000;
+bot.listen(PORT, () => {
+	console.log(`Our app is running on port ${ PORT }`);
+});
+
 let newExpenseCardInfo = {
 	amount: 	0,
 	date: 		new Date(),
