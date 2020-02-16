@@ -1,4 +1,4 @@
-const dotenv 			= require('dotenv').config();
+//const dotenv 			= require('dotenv').config();
 const TelegramBot		= require('node-telegram-bot-api');
 const calendar 			= require('./calendar');
 const adminFunction 	= require('./AdminFunction');
@@ -6,9 +6,11 @@ const TOKEN 			= '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A';
 const constQueryJSON 	= require('./QueryAndJSON')
 const bot				= new TelegramBot(TOKEN, {polling: true});
 const {Client} 			= require('pg');
+var express = require('express');
+var app = express();
 
 const PORT = process.env.PORT || 3000;
-bot.listen(PORT, () => {
+app.listen(PORT, () => {
 	console.log(`Our app is running on port ${ PORT }`);
 });
 
