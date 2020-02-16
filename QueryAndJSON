@@ -1,0 +1,95 @@
+
+//
+// var insertQuery =
+// `INSERT INTO salesforce.Expense_Card__c ( Amount__c, CardDate__c, CardKeeper__c, Description__c, External_Expense__c)
+// VALUES (
+// ${parseInt(indexVariable.newExpenseCardInfo.amount)},
+// '${indexVariable.newExpenseCardInfo.date.getMonth()+1}-${indexVariable.newExpenseCardInfo.date.getDate()}-${indexVariable.newExpenseCardInfo.date.getFullYear()}',
+// '${indexVariable.newExpenseCardInfo.keeper}',
+// '${indexVariable.newExpenseCardInfo.description}',
+// '${idGenerator()}')`;
+//
+// function idGenerator() {
+// 	let number = Math.random().toString(36);
+// 	return number.toString(36).substr(2, 10);
+// }
+//
+// let balanceYear = new Date().getFullYear();
+//
+// let userBalanceQuery =
+// 	`SELECT (SUM(Balance__c) -
+// 	(SELECT SUM(Amount__c) FROM salesforce.expense_card__c WHERE CardKeeper__c = '${indexVariable.userObj.sfid}' AND
+// 	date_part('year', carddate__c) = '${balanceYear}')) as balance
+// 	FROM salesforce.Monthly_Expense__c WHERE Keeper__c = '${indexVariable.userObj.sfid}'
+// 	AND date_part('year', monthdate__c) = '${balanceYear}'`
+//
+// let adminBalanceQuery =
+// 	`SELECT  SUM(Balance__c) as balance
+// 	FROM salesforce.Monthly_Expense__c WHERE
+//      (SELECT office__c FROM salesforce.contact WHERE sfid = keeper__c) = '${indexVariable.officeNumber}'
+// 	 AND date_part('year', monthdate__c) = '${balanceYear}'
+//      UNION
+//      SELECT SUM(amount__c) as amount
+// 	 FROM salesforce.expense_card__c
+// 	 WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${indexVariable.officeNumber}'
+// 	 AND date_part('year', carddate__c) = '${balanceYear}'`
+
+let formExpense =
+	{
+		'reply_markup': {
+			'inline_keyboard': [
+				[
+					{
+						text: 'Today',
+						callback_data: 'today_btn'
+					},
+					{
+						text: 'Calendar',
+						callback_data: 'calendar_btn'
+					},
+					{
+						text: 'Cancel',
+						callback_data: 'cancel_btn'
+					}
+				]
+			]
+		}
+	};
+
+let formNewExpenseCard =
+	{
+		'reply_markup': {
+			'inline_keyboard': [
+				[
+					{
+						text: 'New Expense Card',
+						callback_data: 'new_expense_btn'
+					}
+				]
+			]
+		}
+	};
+
+let formAfterLogin =
+	{
+		'reply_markup': {
+			'inline_keyboard': [
+				[
+					{
+						text: 'Current Balance',
+						callback_data: 'balance_btn'
+					},
+					{
+						text: 'New Expense Card',
+						callback_data: 'new_expense_btn'
+					}
+				]
+			]
+		}
+	}
+
+
+module.exports.formExpense = formExpense
+module.exports.formNewExpenseCard = formNewExpenseCard
+module.exports.formAfterLogin = formAfterLogin
+

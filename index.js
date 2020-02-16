@@ -1,10 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
+const calendar = require('./calendar');
+const adminFunction = require('./AdminFunction');
 const TOKEN = '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A';
+const constQueryJSON = require('./QueryAndJSON')
 const bot = new TelegramBot(TOKEN, {polling: true});
-
 const {Client} = require('pg');
-
 
 let newExpenseCardInfo = {
 	amount: 0,
@@ -13,100 +14,16 @@ let newExpenseCardInfo = {
 	description: ''
 };
 
-let calendarDay = new Date();
-let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-let idCalendarMessage;
 let balanceValue;
+
 let officeNumber;
 let userObj;
 let isAdmin;
-let calendarJSON;
-
-//createCalendar(2019, 3);
-
-function createCalendar(year, month) {
-	let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
-	let d = new Date(year, mon);
-	// пробелы для первого ряда
-	// с понедельника до первого дня месяца
-	// * * * 1  2  3  4
-	calendarJSON =
-		{
-			'reply_markup': {
-				'inline_keyboard': [
-					[
-						{text: '<', callback_data: 'last_month_btn'},
-						{
-							text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(),
-							callback_data: 'select_btn'
-						},
-						{text: '>', callback_data: 'next_month_btn'}
-					],
-
-					[
-						{text: 'S', callback_data: 'week_day'},
-						{text: 'M', callback_data: 'week_day'},
-						{text: 'T', callback_data: 'week_day'},
-						{text: 'W', callback_data: 'week_day'},
-						{text: 'T', callback_data: 'week_day'},
-						{text: 'F', callback_data: 'week_day'},
-						{text: 'S', callback_data: 'week_day'}
-					],
-					[],
-					[],
-					[],
-					[],
-					[],
-					[],
-					[]
-				]
-			}
-		};
-	console.log(calendarJSON);
-
-	for (let i = 0; i < getDay(d); i++) {
-		if (typeof (calendarJSON.reply_markup.inline_keyboard[3]) == 'undefined') {
-			calendarJSON.reply_markup.inline_keyboard.push([]);
-		}
-		let obj = {text: ' ', callback_data: 'empty_field'};
-		calendarJSON.reply_markup.inline_keyboard[3].push(obj);
-		//reply_markup.inline_keyboard[0].push(obj);
-	}
-
-	// <td> ячейки календаря с датами
-	let i = 3; //номер массива
-	while (d.getMonth() == mon) {
-		calendarJSON.reply_markup.inline_keyboard[i].push({
-			text: d.getDate(),
-			callback_data: 'date_field:' + d.getDate()
-		});
-
-		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
-			i++;
-		}
-
-		d.setDate(d.getDate() + 1);
-	}
-
-	// добить таблицу пустыми ячейками, если нужно
-	// 29 30 31 * * * *
-	if (getDay(d) != 0) {
-		for (let i = getDay(d); i < 7; i++) {
-			calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
-		}
-	}
-}
-
-function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
-	let day = date.getDay();
-	if (day == 0) {
-		day = 7;
-	} // сделать воскресенье (0) последним днем
-	return day - 1;
-}
 
 let loginExpense = '';
 let loginResult = false;
+
+
 bot.on('message', msg => {
 	if (msg.text === '/start') {
 		bot.sendMessage(msg.chat.id, `Hi, enter you Expense Login:`);
@@ -164,26 +81,23 @@ bot.on('message', msg => {
 			}
 		);
 
-		let insertQuery =
-			`INSERT INTO salesforce.Expense_Card__c ( Amount__c, CardDate__c, CardKeeper__c, Description__c, External_Expense__c)
-				 VALUES 
-				 ( 
-				 ${parseInt(newExpenseCardInfo.amount)}, 
-				 
-				 '${newExpenseCardInfo.date.getMonth()}-${newExpenseCardInfo.date.getDate()}-${newExpenseCardInfo.date.getFullYear()}', 
-				 
-				 '${newExpenseCardInfo.keeper}', 
-				 '${newExpenseCardInfo.description}', 
-				 '${idGenerator()}'
-				 )`;
-
-		console.log(insertQuery)
 		let client = new Client({
 			connectionString: process.env.DATABASE_URL,
 			ssl: true
 		});
+
+		let insertQuery =
+		`INSERT INTO salesforce.Expense_Card__c ( Amount__c, CardDate__c, CardKeeper__c, Description__c, External_Expense__c)
+		VALUES ( 
+		${parseInt(newExpenseCardInfo.amount)}, 
+		'${newExpenseCardInfo.date.getMonth()+1}-${newExpenseCardInfo.date.getDate()}-${newExpenseCardInfo.date.getFullYear()}', 
+		'${newExpenseCardInfo.keeper}', 
+		'${newExpenseCardInfo.description}', 
+		'${idGenerator()}')`;
+
+
 		client.connect();
-		console.log(insertQuery);
+
 		client.query(insertQuery, (err) => {
 			if (err) {
 				throw err;
@@ -229,26 +143,27 @@ bot.on('callback_query', (callbackQuery) => {
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day to create a card:',
-				{
-					'reply_markup': {
-						'inline_keyboard': [
-							[
-								{
-									text: 'Today',
-									callback_data: 'today_btn'
-								},
-								{
-									text: 'Calendar',
-									callback_data: 'calendar_btn'
-								},
-								{
-									text: 'Cancel',
-									callback_data: 'cancel_btn'
-								}
-							]
-						]
-					}
-				}
+				constQueryJSON.formExpense
+				// {
+				// 	'reply_markup': {
+				// 		'inline_keyboard': [
+				// 			[
+				// 				{
+				// 					text: 'Today',
+				// 					callback_data: 'today_btn'
+				// 				},
+				// 				{
+				// 					text: 'Calendar',
+				// 					callback_data: 'calendar_btn'
+				// 				},
+				// 				{
+				// 					text: 'Cancel',
+				// 					callback_data: 'cancel_btn'
+				// 				}
+				// 			]
+				// 		]
+				// 	}
+				// }
 			);
 			break;
 
@@ -274,13 +189,13 @@ bot.on('callback_query', (callbackQuery) => {
 				}
 			});
 
-			calendarDay.setMonth(calendarDay.getMonth() - 1);
+			calendar.calendarDay.setMonth(calendar.calendarDay.getMonth() - 1);
 
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			//calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth());
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
-				calendarJSON
+				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 			break;
 
@@ -294,28 +209,28 @@ bot.on('callback_query', (callbackQuery) => {
 				}
 			});
 
-			calendarDay.setMonth(calendarDay.getMonth() + 1);
+			calendar.calendarDay.setMonth(calendar.calendarDay.getMonth() + 1);
 
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth());
+			//calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth());
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
-				calendarJSON
+				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 			break;
 
 		case 'calendar_btn':
-			createCalendar(calendarDay.getFullYear(), calendarDay.getMonth() + 1);
+			//calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth() + 1);
 			bot.sendMessage(
 				msg.chat.id,
 				'Choose a day with calendar:',
-				calendarJSON
+				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
 
 		case 'date_field':
 
 			newExpenseCardInfo.date =
-				new Date(calendarDay.getFullYear(), calendarDay.getMonth(), parseInt(dateButtonValue) + 1);
+				new Date(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth(), parseInt(dateButtonValue) + 1);
 			bot.sendMessage(
 				msg.chat.id,
 				'Enter Amount value please (in currency format, example: 12.34):'
@@ -324,7 +239,6 @@ bot.on('callback_query', (callbackQuery) => {
 			break;
 
 		case 'balance_btn':
-
 
 			let balanceYear = new Date().getFullYear();
 			let clientBalance = new Client({
@@ -336,7 +250,8 @@ bot.on('callback_query', (callbackQuery) => {
 
 			if (isAdmin == false) {
 
-				 balanceQuery = `SELECT (SUM(Balance__c) -
+				 balanceQuery =
+				 `SELECT (SUM(Balance__c) -
 				(SELECT SUM(Amount__c) FROM salesforce.expense_card__c WHERE CardKeeper__c = '${userObj.sfid}' AND
 				date_part('year', carddate__c) = '${balanceYear}')) as balance
 				FROM salesforce.Monthly_Expense__c WHERE Keeper__c = '${userObj.sfid}'
@@ -348,14 +263,12 @@ bot.on('callback_query', (callbackQuery) => {
 					`SELECT  SUM(Balance__c) as balance
 					FROM salesforce.Monthly_Expense__c WHERE
         			(SELECT office__c FROM salesforce.contact WHERE sfid = keeper__c) = '${officeNumber}'
-					AND date_part('year', monthdate__c) = '${balanceYear}' 
+					AND date_part('year', monthdate__c) = '${balanceYear}'
        				UNION
         			SELECT SUM(amount__c) as amount
 					FROM salesforce.expense_card__c
-					WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${officeNumber}' 
+					WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${officeNumber}'
 					AND date_part('year', carddate__c) = '${balanceYear}'`;
-
-				console.log(balanceQuery)
 			}
 
 			clientBalance.connect();
@@ -378,19 +291,22 @@ bot.on('callback_query', (callbackQuery) => {
 
 				clientBalance.end();
 
-				bot.sendMessage(msg.chat.id, `Balance summary in this year = ${balanceValue.toFixed(2)}$`,
-					{
-						'reply_markup': {
-							'inline_keyboard': [
-								[
-									{
-										text: 'New Expense Card',
-										callback_data: 'new_expense_btn'
-									}
-								]
-							]
-						}
-					}
+				bot.sendMessage(msg.chat.id,
+					`Balance summary in this year = ${balanceValue.toFixed(2)}$`,
+					constQueryJSON.formNewExpenseCard
+
+					// {
+					// 	'reply_markup': {
+					// 		'inline_keyboard': [
+					// 			[
+					// 				{
+					// 					text: 'New Expense Card',
+					// 					callback_data: 'new_expense_btn'
+					// 				}
+					// 			]
+					// 		]
+					// 	}
+					// }
 				);
 			});
 
@@ -401,27 +317,28 @@ bot.on('callback_query', (callbackQuery) => {
 			bot.sendMessage(
 				msg.chat.id,
 				`For logout enter /start . Select action: `,
-				{
-					'reply_markup': {
-						'inline_keyboard': [
-							[
-								{
-									text: 'Current Balance',
-									callback_data: 'balance_btn'
-								},
-								{
-									text: 'New Expense Card',
-									callback_data: 'new_expense_btn'
-								}
-							]
-						]
-					}
-				}
+				constQueryJSON.formAfterLogin
+				// {
+				// 	'reply_markup': {
+				// 		'inline_keyboard': [
+				// 			[
+				// 				{
+				// 					text: 'Current Balance',
+				// 					callback_data: 'balance_btn'
+				// 				},
+				// 				{
+				// 					text: 'New Expense Card',
+				// 					callback_data: 'new_expense_btn'
+				// 				}
+				// 			]
+				// 		]
+				// 	}
+				// }
 			);
 			break;
 
 		case 'office_selector':
-			adminSelectOffice(officeNumber, msg);
+			adminFunction.adminSelectOffice(officeNumber, msg);
 			break;
 
 	}
@@ -429,11 +346,11 @@ bot.on('callback_query', (callbackQuery) => {
 
 bot.on('polling_error', (err) => console.log(err));
 
-
 function idGenerator() {
 	let number = Math.random().toString(36);
 	return number.toString(36).substr(2, 10);
 }
+
 
 function creedsVerification(creedsQuerry, msg) {
 	let client = new Client({
@@ -461,25 +378,26 @@ function creedsVerification(creedsQuerry, msg) {
 				bot.sendMessage(
 					msg.chat.id,
 					`Hello ${res.rows[0].firstname}! Login Success!! For logout enter /start . Select action: `,
-					{
-						'reply_markup': {
-							'inline_keyboard': [
-								[
-									{
-										text: 'Current Balance',
-										callback_data: 'balance_btn'
-									},
-									{
-										text: 'New Expense Card',
-										callback_data: 'new_expense_btn'
-									}
-								]
-							]
-						}
-					}
+					constQueryJSON.formAfterLogin
+					// {
+					// 	'reply_markup': {
+					// 		'inline_keyboard': [
+					// 			[
+					// 				{
+					// 					text: 'Current Balance',
+					// 					callback_data: 'balance_btn'
+					// 				},
+					// 				{
+					// 					text: 'New Expense Card',
+					// 					callback_data: 'new_expense_btn'
+					// 				}
+					// 			]
+					// 		]
+					// 	}
+					// }
 				);
 			} else {
-				adminLoginCase(msg);
+				adminFunction.adminLoginCase(msg);
 
 			}
 			console.log(newExpenseCardInfo.keeper);
@@ -492,87 +410,179 @@ function creedsVerification(creedsQuerry, msg) {
 
 }
 
-function adminSelectOffice(officeNumber, msg) {
-
-	let client = new Client({
-		connectionString: process.env.DATABASE_URL,
-		ssl: true
-	});
-
-	let adminQuery = `SELECT sfid, email, firstname FROM salesforce.contact WHERE 
-		 admin__c = true AND office__c = '${officeNumber}'`;
-	console.log(adminQuery);
-	client.connect();
-
-	client.query(adminQuery, (err, res) => {
-		if (err) {
-			bot.sendMessage(msg.chat.id, `Ooops!! Load office is error :( Please retry or login with PC.`);
-		}
-		client.end();
-
-		bot.sendMessage(
-			msg.chat.id,
-			`Select office Success!! For logout enter /start . Select action: `,
-			{
-				'reply_markup': {
-					'inline_keyboard': [
-						[
-							{
-								text: 'Current Balance',
-								callback_data: 'balance_btn'
-							},
-							{
-								text: 'New Expense Card',
-								callback_data: 'new_expense_btn'
-							}
-						]
-					]
-				}
-			}
-		);
-		isAdmin = true;
-		userObj = res.rows[0];
-		newExpenseCardInfo.keeper = userObj.sfid;
-	});
-}
-
-function adminLoginCase(msg) {
-	let option =
-		{
-			'reply_markup': {
-				'inline_keyboard': [
-					[]
-				]
-			}
-		};
-
-	let client = new Client({
-		connectionString: process.env.DATABASE_URL,
-		ssl: true
-	});
-	client.connect();
-
-	client.query(
-			`SELECT DISTINCT(office__c) FROM salesforce.contact WHERE office__c !='NULL' ORDER BY office__c DESC`,
-		(err, res) => {
-			if (err) {
-				bot.sendMessage(msg.chat.id, `Ooops!! Load office list error :( Please retry.`);
-			}
-			client.end();
+module.exports.officeNumber = officeNumber
+module.exports.userObj = userObj
+module.exports.isAdmin = isAdmin
+module.exports.newExpenseCardInfo = newExpenseCardInfo
+module.exports.bot = bot
 
 
-			for (let row of res.rows) {
-				option.reply_markup.inline_keyboard[0].push({text: row.office__c, callback_data: row.office__c});
-			}
-			bot.sendMessage(
-				msg.chat.id,
-				`Hello Dear Admin! Login Success!! For logout or change office enter /start .\nSelect office: `,
-				option
-			);
+//
+// function adminSelectOffice(officeNumber, msg) {
+//
+// 	let client = new Client({
+// 		connectionString: process.env.DATABASE_URL,
+// 		ssl: true
+// 	});
+//
+// 	let adminQuery = `SELECT sfid, email, firstname FROM salesforce.contact WHERE
+// 		 admin__c = true AND office__c = '${officeNumber}'`;
+// 	console.log(adminQuery);
+// 	client.connect();
+//
+// 	client.query(adminQuery, (err, res) => {
+// 		if (err) {
+// 			bot.sendMessage(msg.chat.id, `Ooops!! Load office is error :( Please retry or login with PC.`);
+// 		}
+// 		client.end();
+//
+// 		bot.sendMessage(
+// 			msg.chat.id,
+// 			`Select office Success!! For logout enter /start . Select action: `,
+// 			{
+// 				'reply_markup': {
+// 					'inline_keyboard': [
+// 						[
+// 							{
+// 								text: 'Current Balance',
+// 								callback_data: 'balance_btn'
+// 							},
+// 							{
+// 								text: 'New Expense Card',
+// 								callback_data: 'new_expense_btn'
+// 							}
+// 						]
+// 					]
+// 				}
+// 			}
+// 		);
+// 		isAdmin = true;
+// 		userObj = res.rows[0];
+// 		newExpenseCardInfo.keeper = userObj.sfid;
+// 	});
+// }
+//
+// function adminLoginCase(msg) {
+// 	let option =
+// 		{
+// 			'reply_markup': {
+// 				'inline_keyboard': [
+// 					[]
+// 				]
+// 			}
+// 		};
+//
+// 	let client = new Client({
+// 		connectionString: process.env.DATABASE_URL,
+// 		ssl: true
+// 	});
+// 	client.connect();
+//
+// 	client.query(
+// 			`SELECT DISTINCT(office__c) FROM salesforce.contact WHERE office__c !='NULL' ORDER BY office__c DESC`,
+// 		(err, res) => {
+// 			if (err) {
+// 				bot.sendMessage(msg.chat.id, `Ooops!! Load office list error :( Please retry.`);
+// 			}
+// 			client.end();
+//
+//
+// 			for (let row of res.rows) {
+// 				option.reply_markup.inline_keyboard[0].push({text: row.office__c, callback_data: row.office__c});
+// 			}
+// 			bot.sendMessage(
+// 				msg.chat.id,
+// 				`Hello Dear Admin! Login Success!! For logout or change office enter /start .\nSelect office: `,
+// 				option
+// 			);
+//
+// 		}
+// 	);
+// }
 
-		}
-	);
-}
 
-
-
+//let calendarJSON;
+//createCalendar(2019, 3);
+// function createCalendar(year, month) {
+// 	let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
+// 	let d = new Date(year, mon);
+// 	// пробелы для первого ряда
+// 	// с понедельника до первого дня месяца
+// 	// * * * 1  2  3  4
+// 	calendarJSON =
+// 		{
+// 			'reply_markup': {
+// 				'inline_keyboard': [
+// 					[
+// 						{text: '<', callback_data: 'last_month_btn'},
+// 						{
+// 							text: monthName[calendarDay.getMonth()] + calendarDay.getFullYear().toString(),
+// 							callback_data: 'select_btn'
+// 						},
+// 						{text: '>', callback_data: 'next_month_btn'}
+// 					],
+//
+// 					[
+// 						{text: 'S', callback_data: 'week_day'},
+// 						{text: 'M', callback_data: 'week_day'},
+// 						{text: 'T', callback_data: 'week_day'},
+// 						{text: 'W', callback_data: 'week_day'},
+// 						{text: 'T', callback_data: 'week_day'},
+// 						{text: 'F', callback_data: 'week_day'},
+// 						{text: 'S', callback_data: 'week_day'}
+// 					],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[],
+// 					[]
+// 				]
+// 			}
+// 		};
+// 	console.log(calendarJSON);
+//
+// 	for (let i = 0; i < getDay(d); i++) {
+// 		if (typeof (calendarJSON.reply_markup.inline_keyboard[3]) == 'undefined') {
+// 			calendarJSON.reply_markup.inline_keyboard.push([]);
+// 		}
+// 		let obj = {text: ' ', callback_data: 'empty_field'};
+// 		calendarJSON.reply_markup.inline_keyboard[3].push(obj);
+// 		//reply_markup.inline_keyboard[0].push(obj);
+// 	}
+//
+// 	// <td> ячейки календаря с датами
+// 	let i = 3; //номер массива
+// 	while (d.getMonth() == mon) {
+// 		calendarJSON.reply_markup.inline_keyboard[i].push({
+// 			text: d.getDate(),
+// 			callback_data: 'date_field:' + d.getDate()
+// 		});
+//
+// 		if (getDay(d) % 7 == 6) { // вс, последний день - перевод строки
+// 			i++;
+// 		}
+//
+// 		d.setDate(d.getDate() + 1);
+// 	}
+//
+// 	// добить таблицу пустыми ячейками, если нужно
+// 	// 29 30 31 * * * *
+// 	if (getDay(d) != 0) {
+// 		for (let i = getDay(d); i < 7; i++) {
+// 			calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
+// 		}
+// 	}
+// }
+//
+// function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
+// 	let day = date.getDay();
+// 	if (day == 0) {
+// 		day = 7;
+// 	} // сделать воскресенье (0) последним днем
+// 	return day - 1;
+// }
+//let calendarDay = new Date();
+//let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+//let idCalendarMessage;

@@ -1,14 +1,13 @@
-const calendarDay = require('./index').calendarDay
-
+let calendarDay = new Date();
 let monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function createCalendar(year, month) {
+let createCalendar = function createCalendar(year, month) {
     let mon = month; // месяцы в JS идут от 0 до 11, а не от 1 до 12
     let d = new Date(year, mon);
     // пробелы для первого ряда
     // с понедельника до первого дня месяца
     // * * * 1  2  3  4
-	calendarJSON =
+	let calendarJSON =
         {
             'reply_markup': {
                 'inline_keyboard': [
@@ -73,12 +72,18 @@ function createCalendar(year, month) {
             calendarJSON.reply_markup.inline_keyboard[7].push({text: ' ', callback_data: 'empty_field'});
         }
     }
+    return calendarJSON;
 }
 
-function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
+let getDay = function getDay(date) { // получить номер дня недели, от 0 (пн) до 6 (вс)
     let day = date.getDay();
     if (day == 0) {
         day = 7;
     } // сделать воскресенье (0) последним днем
     return day - 1;
 }
+
+module.exports.getDay = getDay;
+module.exports.createCalendar = createCalendar;
+module.exports.calendarDay = calendarDay;
+module.exports.monthName = monthName;
