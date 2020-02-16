@@ -9,10 +9,10 @@ const {Client} 			= require('pg');
 var express = require('express');
 var app = express();
 
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-// 	console.log(`Our app is running on port ${ PORT }`);
-// });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+	console.log(`Our app is running on port ${ PORT }`);
+});
 
 let newExpenseCardInfo = {
 	amount: 	0,
@@ -363,7 +363,8 @@ function creedsVerification(creedsQuerry, msg) {
 
 				);
 			} else {
-				adminFunction.adminLoginCase(msg);
+				adminFunction.adminLoginCase(msg)
+				isAdmin = true
 			}
 			console.log(newExpenseCardInfo.keeper);
 		} else {
