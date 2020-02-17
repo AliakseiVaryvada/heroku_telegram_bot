@@ -3,6 +3,7 @@ const TelegramBot		= require('node-telegram-bot-api');
 const calendar 			= require('./calendar');
 const adminFunction 	= require('./AdminFunction');
 const TOKEN 			= '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A';
+const URL 				= 'https://heroku-tg-varyvada-bot.herokuapp.com/';
 const constQueryJSON 	= require('./QueryAndJSON')
 const bot				= new TelegramBot(TOKEN, {polling: true});
 const {Client} 			= require('pg');
@@ -11,6 +12,8 @@ let express 			= require('express');
 let app 				= express();
 
 const PORT = process.env.PORT || 3000;
+
+bot.setWebHook(`${URL}/bot${TOKEN}` );
 
 app.listen(PORT, () => {
 	console.log(`Our app is running on port ${ PORT }`);
