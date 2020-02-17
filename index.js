@@ -272,7 +272,6 @@ bot.on('callback_query', (callbackQuery) => {
 					FROM salesforce.expense_card__c
 					WHERE (SELECT office__c FROM salesforce.contact WHERE sfid = cardkeeper__c)  = '${officeNumber}'
 					AND date_part('year', carddate__c) = '${balanceYear}'`;
-				console.log(balanceQuery)
 			}
 
 			clientBalance.connect();
@@ -320,7 +319,6 @@ bot.on('callback_query', (callbackQuery) => {
 
 		);
 	}
-	console.log(callbackQuery)
 	bot.answerCallbackQuery(callbackQuery.id)
 });
 
@@ -352,7 +350,6 @@ function creedsVerification(creedsQuerry, msg) {
 			)
 		}
 		for (let row of res.rows) {
-			console.log(JSON.stringify(row));
 		}
 		client.end();
 
@@ -372,7 +369,6 @@ function creedsVerification(creedsQuerry, msg) {
 				adminFunction.adminLoginCase(msg)
 				isAdmin = true
 			}
-			console.log(newExpenseCardInfo.keeper);
 		} else {
 			bot.sendMessage(msg.chat.id, `⛔ <strong>Ooops!!</strong>  Wrong password or email.
 			 <em>Please check entered information, CapsLock button and retry.</em>`,
