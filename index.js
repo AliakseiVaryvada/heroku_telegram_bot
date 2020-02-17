@@ -6,18 +6,20 @@ const TOKEN 			= '964527257:AAEJeN2H35vn-i4oX1ijbUqDGIQI-UfxR2A';
 const constQueryJSON 	= require('./QueryAndJSON')
 const bot				= new TelegramBot(TOKEN, {polling: true});
 const {Client} 			= require('pg');
-var express = require('express');
-var app = express();
+
+let express 			= require('express');
+let app 				= express();
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
 	console.log(`Our app is running on port ${ PORT }`);
 });
 
 let newExpenseCardInfo = {
-	amount: 	0,
-	date: 		new Date(),
-	keeper: 	'',
+	amount: 	 0,
+	date: 		 new Date(),
+	keeper: 	 '',
 	description: ''
 };
 
@@ -176,6 +178,7 @@ bot.on('callback_query', (callbackQuery) => {
 				'Enter <strong>Amount</strong> value please <em>(in currency format, example: 12.34)</em>:',
 				{parse_mode: 'html'}
 			);
+
 			break;
 
 		case 'last_month_btn':
@@ -196,6 +199,7 @@ bot.on('callback_query', (callbackQuery) => {
 				'📆 Choose a day with calendar:',
 				calendar.createCalendar(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth())
 			);
+
 			break;
 
 		case 'next_month_btn':
@@ -316,6 +320,8 @@ bot.on('callback_query', (callbackQuery) => {
 
 		);
 	}
+	console.log(callbackQuery)
+	bot.answerCallbackQuery(callbackQuery.id)
 });
 
 
