@@ -177,7 +177,7 @@ bot.on('callback_query', (callbackQuery) => {
 				dateForNewExpense.getMonth() + 1, dateForNewExpense.getDate()
 			);
 
-			console.log(ewExpenseCardInfo.date);
+			console.log(newExpenseCardInfo.date);
 
 			bot.sendMessage(
 				msg.chat.id,
