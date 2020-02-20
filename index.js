@@ -176,6 +176,9 @@ bot.on('callback_query', (callbackQuery) => {
 			newExpenseCardInfo.date = new Date(dateForNewExpense.getFullYear(),
 				dateForNewExpense.getMonth() + 1, dateForNewExpense.getDate()
 			);
+
+			console.log(ewExpenseCardInfo.date);
+
 			bot.sendMessage(
 				msg.chat.id,
 				'Enter <strong>Amount</strong> value please <em>(in currency format, example: 12.34)</em>:',
@@ -235,7 +238,7 @@ bot.on('callback_query', (callbackQuery) => {
 		case 'date_field':
 
 			newExpenseCardInfo.date =
-				new Date(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth(), parseInt(dateButtonValue) + 1);
+				new Date(calendar.calendarDay.getFullYear(), calendar.calendarDay.getMonth(), parseInt(dateButtonValue));
 			bot.sendMessage(
 				msg.chat.id,
 				'Enter <strong>Amount</strong> value please <em>(in currency format, example: 12.34)</em>:',
