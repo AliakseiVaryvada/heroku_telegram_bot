@@ -174,10 +174,8 @@ bot.on('callback_query', (callbackQuery) => {
 			let dateForNewExpense = new Date();
 
 			newExpenseCardInfo.date = new Date(dateForNewExpense.getFullYear(),
-				dateForNewExpense.getMonth() + 1, dateForNewExpense.getDate()
+				dateForNewExpense.getMonth(), dateForNewExpense.getDate()
 			);
-
-			console.log(newExpenseCardInfo.date);
 
 			bot.sendMessage(
 				msg.chat.id,
