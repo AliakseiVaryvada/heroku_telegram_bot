@@ -106,7 +106,7 @@ bot.on('message', msg => {
 		let insertQuery =
 		`INSERT INTO salesforce.Expense_Card__c ( Amount__c, CardDate__c, CardKeeper__c, Description__c, External_Expense__c)
 		VALUES ( 
-		${parseInt(newExpenseCardInfo.amount)}, 
+		${parseFloat(newExpenseCardInfo.amount)}, 
 		'${newExpenseCardInfo.date.getMonth()+1}-${newExpenseCardInfo.date.getDate()}-${newExpenseCardInfo.date.getFullYear()}', 
 		'${newExpenseCardInfo.keeper}', 
 		'${newExpenseCardInfo.description}', 
